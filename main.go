@@ -1,63 +1,64 @@
 package main
 
 import (
-    "fmt"
     "log"
     "net/http"
+    "github.com/gin-gonic/gin"
     "github.com/gorilla/websocket"
 )
 var upgrader = websocket.Upgrader{
-    ReadBufferSize:  1024,
-    WriteBufferSize: 1024,
-}
-func homePage(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, "Home Page")
+       EnableCompression: true,
+       CheckOrigin:       func(r *http.Request) bool { return true },
 }
 
-func setupRoutes() {
-    http.HandleFunc("/", homePage)
-    http.HandleFunc("/ws", wsEndpoint)
+func DefineAllRoutes(router *gin.Engine){
+    router.GET("/ws", wsHandler)
+    router.GET("/", home)
 }
-func reader(conn *websocket.Conn) {
+
+func home(c *gin.Context){
+    c.String(http.StatusOK, "Welcome to the home page")
+}
+func wsHandler(c *gin.Context){
+    user := c.Query("user")
+    if user == "" {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Missing user query parameter"})
+        return
+    }
+    //c.String(http.StatusOK, "WebSocket handler placeholder",user)
+
+//     // Upgrade HTTP -> WebSocket
+   conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+    if err != nil {
+        log.Println("Failed to upgrade:", err)
+        //c.String(http.StatusInternalServerError, "WebSocket upgrade failed: %v", err)
+        return
+    }
+
+    // ✅ Correct way to print connection info
+    //c.String(http.StatusOK, "WebSocket connection established: %v", conn)
+    defer conn.Close()
+    log.Println("Client connected:", user)
+
+    // Echo loop`
     for {
-    // read in a message
-        messageType, p, err := conn.ReadMessage()
+        messageType, message, err := conn.ReadMessage()
         if err != nil {
-            log.Println(err)
-            return
+            log.Println("Read error:", err)
+            break
         }
-    // print out that message for clarity
-        fmt.Println(string(p))
+        log.Printf("[%s] says: %s", user, string(message))
 
-        if err := conn.WriteMessage(messageType, p); err != nil {
-            log.Println(err)
-            return
+        // Send back to the client (echo)
+        if err := conn.WriteMessage(messageType, message); err != nil {
+            log.Println("Write error:", err)
+            break
         }
-
     }
+    log.Println("Client disconnected:", user)
 }
-func wsEndpoint(w http.ResponseWriter, r *http.Request) {
-    upgrader.CheckOrigin = func(r *http.Request) bool { return true }
-
-    // upgrade this connection to a WebSocket
-    // connection
-    ws, err := upgrader.Upgrade(w, r, nil)
-    if err != nil {
-        log.Println(err)
-    }
-
-    log.Println("Client Connected")
-    err = ws.WriteMessage(1, []byte("Hi Client!"))
-    if err != nil {
-        log.Println(err)
-    }
-    // listen indefinitely for new messages coming
-    // through on our WebSocket connection
-    reader(ws)
-}
-
 func main() {
-    fmt.Println("Hello World")
-    setupRoutes()
-    log.Fatal(http.ListenAndServe(":8080", nil))
+    router := gin.Default()
+    DefineAllRoutes(router)
+    router.Run(":8080")
 }

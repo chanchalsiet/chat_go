@@ -1,31 +1,72 @@
+<!--<!DOCTYPE html>-->
+<!--<html>-->
+<!--<head>-->
+<!--    <title>Gin WebSocket Client</title>-->
+<!--</head>-->
+<!--<body>-->
+<!--    <h1>WebSocket Test</h1>-->
+<!--    <input type="text" id="userNameInput" placeholder="Enter your name">-->
+<!--    <button onclick="connectWebSocket()">Connect</button>-->
+<!--    <p id="status">Status: Disconnected</p>-->
+<!--    <div id="messages"></div>-->
+
+<!--    <script>-->
+<!--        let ws;-->
+<!--        const statusEl = document.getElementById('status');-->
+<!--        const messagesEl = document.getElementById('messages');-->
+<!--        const userNameInput = document.getElementById('userNameInput');-->
+
+<!--        function connectWebSocket() {-->
+<!--            const user = userNameInput.value;-->
+<!--            if (!user) {-->
+<!--                alert("Please enter a user name");-->
+<!--                return;-->
+<!--            }-->
+
+<!--            // Correctly use the ws:// protocol with query parameter-->
+<!--            const url = `http://localhost:8080/ws`;-->
+<!--            ws = new WebSocket(url);-->
+
+<!--            ws.onopen = () => {-->
+<!--                statusEl.textContent = 'Status: Connected';-->
+<!--                statusEl.style.color = 'green';-->
+<!--                ws.send("Hello server!"); // Send an initial message-->
+<!--            };-->
+
+<!--            ws.onmessage = (event) => {-->
+<!--                const message = document.createElement('p');-->
+<!--                message.textContent = `Received: ${event.data}`;-->
+<!--                messagesEl.appendChild(message);-->
+<!--            };-->
+
+<!--            ws.onclose = () => {-->
+<!--                statusEl.textContent = 'Status: Disconnected';-->
+<!--                statusEl.style.color = 'red';-->
+<!--            };-->
+
+<!--            ws.onerror = (error) => {-->
+<!--                console.error("WebSocket error:", error);-->
+<!--                statusEl.textContent = 'Status: Error';-->
+<!--                statusEl.style.color = 'orange';-->
+<!--            };-->
+<!--        }-->
+<!--    </script>-->
+<!--</body>-->
+<!--</html>-->
+
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Go WebSocket Tutorial</title>
-  </head>
+<html>
   <body>
-    <h2>Hello World</h2>
-
+    <h3>WebSocket Test</h3>
     <script>
-        let socket = new WebSocket("ws://127.0.0.1:8080/ws");
-        console.log("Attempting Connection...");
+      let socket = new WebSocket("ws://localhost:8080/ws?user=alice");
 
-        socket.onopen = () => {
-            console.log("Successfully Connected");
-            socket.send("Hi From the Client!")
-        };
+      socket.onopen = () => console.log("Connected to WebSocket!");
+      socket.onmessage = (event) => console.log("Message from server:", event.data);
+      socket.onerror = (error) => console.log("Error:", error);
 
-        socket.onclose = event => {
-            console.log("Socket Closed Connection: ", event);
-            socket.send("Client Closed!")
-        };
-
-        socket.onerror = error => {
-            console.log("Socket Error: ", error);
-        };
+      // Send a message after 1 second
+      setTimeout(() => socket.send("Hello from client!"), 1000);
 
     </script>
   </body>
